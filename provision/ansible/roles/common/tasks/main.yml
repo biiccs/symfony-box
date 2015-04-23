@@ -1,0 +1,56 @@
+---
+- name: Update apt
+  sudo: yes
+  apt: update_cache=yes
+
+- name: Add Nginx Repository
+  apt_repository: repo='ppa:nginx/stable' state=present
+  register: ppastable
+
+- name: Install Nginx
+  apt: pkg=nginx state=installed update_cache=true
+  when: ppastable|success
+  register: nginxinstalled
+  notify:
+    - Start Nginx
+
+- name: Disable default server
+  file: path=/etc/nginx/sites-enabled/default state=absent
+
+- name: Creates directory
+  file: path=/var/www/{{ project.name }} state=directory
+
+- name: Create symlink
+  file: src=/vagrant/applications/{{ project.name }}  dest=/var/www/{{ project.domain }} state=link
+
+- name: Create site availible
+  sudo: yes
+  template: src=symfony2.j2 dest=/etc/nginx/sites-available/{{ project.domain }}.conf
+
+- name: Enable site for nginx symlink
+  file: src=/etc/nginx/sites-available/{{ project.domain }}.conf dest=/etc/nginx/sites-enabled/{{ project.domain }}.conf state=link
+  notify:
+    - Reload Nginx
+
+- name: Install php5-fpm
+  sudo: yes
+  apt: pkg=php5-fpm state=latest
+
+- name: Install PHP Packages
+  sudo: yes
+  apt: pkg={{ item }} state=latest
+  with_items: php_packages
+
+- name: Install composer
+  sudo: yes
+  shell: curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+
+- name: Install MySQL
+  apt: name={{ item }} update_cache=yes cache_valid_time=3600 state=present
+  sudo: yes
+  with_items:
+  - python-mysqldb
+  - mysql-server
+
+- name: Create a new database with name 'gofast'
+  mysql_db: name=gofast state=present
