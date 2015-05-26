@@ -1,0 +1,37 @@
+---
+- name: Add Nginx Repository
+  apt_repository: repo='ppa:nginx/stable' state=present
+  register: ppastable
+
+- name: Install Nginx
+  apt: pkg=nginx state=installed update_cache=true
+  when: ppastable|success
+  register: nginxinstalled
+  notify:
+    - Start Nginx
+
+#- name: Disable default server
+#  file: path=/etc/nginx/sites-enabled/default state=absent
+
+- name: Creates directory
+  file: path={{projects_root}}/{{ item.name }} state=directory
+  with_items: projects
+  when: projects
+
+- name: Create symlink
+  file: src=/vagrant/{{local_apps_root}}/{{ item.name }} dest={{projects_root}}/{{ item.domain }} state=link
+  with_items: projects
+  when: projects
+
+- name: Create site availible
+  sudo: yes
+  template: src={{ item.template }} dest=/etc/nginx/sites-available/{{ item.domain }}.conf
+  with_items: projects
+  when: projects
+
+- name: Enable site for nginx symlink
+  file: src=/etc/nginx/sites-available/{{ item.domain }}.conf dest=/etc/nginx/sites-enabled/{{ item.domain }}.conf state=link
+  with_items: projects
+  when: projects
+  notify:
+    - Reload Nginx

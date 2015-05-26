@@ -1,6 +1,6 @@
 server {
-    server_name {{ project.domain }} *.{{ project.domain }};
-    root /var/www/{{ project.domain }}/web;
+    server_name {{ item.domain }} *.{{ item.domain }};
+    root {{projects_root}}/{{ item.domain }}/web;
 
     location / {
         # try to serve file directly, fallback to app.php
@@ -29,6 +29,6 @@ server {
 #        internal;
 #    }
 
-    error_log /var/log/nginx/{{ project.name }}_error.log;
-    access_log /var/log/nginx/{{ project.name }}_access.log;
+    error_log /var/log/nginx/{{ item.name }}_error.log;
+    access_log /var/log/nginx/{{ item.name }}_access.log;
 }

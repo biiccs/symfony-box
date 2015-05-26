@@ -1,0 +1,5 @@
+---
+- name: Install MySql Packages
+  sudo: yes
+  apt: pkg={{ item }} state=latest
+  with_items: mysql_packages

@@ -1,0 +1,14 @@
+---
+- name: Add PHP Repository
+  apt_repository: repo='ppa:ondrej/php5-5.6' state=present
+  register: ppaphp
+
+- name: Install PHP and PHP-FPM
+  register: phpinstall
+  when: ppaphp|success
+  apt: pkg={{ item }} state=installed update_cache=true
+  with_items: php_packages
+  notify:
+    - Start PHP-FPM
+
+- include: composer.yml
